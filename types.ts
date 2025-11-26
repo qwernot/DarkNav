@@ -1,3 +1,4 @@
+
 export interface LinkItem {
   id: string;
   title: string;
@@ -14,9 +15,8 @@ export interface Category {
 }
 
 export interface AppData {
+  adminPassword?: string; // Store password in data.json
   categories: Category[];
 }
 
 export type SearchEngine = 'google' | 'bing' | 'baidu';
-
-export const ADMIN_PASSWORD = "666333";

@@ -1,16 +1,31 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { ICON_MAP } from '../constants';
+import { Category } from '../types';
 
 interface CategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (title: string, iconName: string) => void;
+  initialData?: Category | null;
 }
 
-const CategoryModal: React.FC<CategoryModalProps> = ({ isOpen, onClose, onSave }) => {
+const CategoryModal: React.FC<CategoryModalProps> = ({ isOpen, onClose, onSave, initialData }) => {
   const [title, setTitle] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('LayoutGrid');
+
+  useEffect(() => {
+    if (isOpen) {
+        if (initialData) {
+            setTitle(initialData.title);
+            setSelectedIcon(initialData.iconName);
+        } else {
+            setTitle('');
+            setSelectedIcon('LayoutGrid');
+        }
+    }
+  }, [isOpen, initialData]);
 
   if (!isOpen) return null;
 
@@ -18,8 +33,6 @@ const CategoryModal: React.FC<CategoryModalProps> = ({ isOpen, onClose, onSave }
     e.preventDefault();
     if (title.trim()) {
       onSave(title, selectedIcon);
-      setTitle('');
-      setSelectedIcon('LayoutGrid');
       onClose();
     }
   };
@@ -28,7 +41,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({ isOpen, onClose, onSave }
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md m-4">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-bold text-slate-800">新建分类</h3>
+          <h3 className="text-lg font-bold text-slate-800">{initialData ? '编辑分类' : '新建分类'}</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
             <X className="w-5 h-5" />
           </button>
@@ -75,7 +88,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({ isOpen, onClose, onSave }
             type="submit"
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition-colors"
           >
-            创建分类
+            {initialData ? '保存修改' : '创建分类'}
           </button>
         </form>
       </div>

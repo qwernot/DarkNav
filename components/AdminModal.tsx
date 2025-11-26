@@ -1,14 +1,15 @@
+
 import React, { useState } from 'react';
 import { X, Lock } from 'lucide-react';
-import { ADMIN_PASSWORD } from '../types';
 
 interface AdminModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: () => void;
+  onLogin: (password: string) => void; // Pass back the password to verify
+  currentRealPassword?: string; // To verify against
 }
 
-const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose, onLogin }) => {
+const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose, onLogin, currentRealPassword }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
 
@@ -16,8 +17,10 @@ const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose, onLogin }) => 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      onLogin();
+    const targetPwd = currentRealPassword || "666333";
+    
+    if (password === targetPwd) {
+      onLogin(password);
       onClose();
       setPassword('');
       setError(false);

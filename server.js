@@ -1,3 +1,4 @@
+
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
@@ -13,16 +14,17 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'data.json');
 
-// Initial Data Fallback
+// Initial Data Fallback (must match constants.tsx structure)
 const INITIAL_DATA = {
+  adminPassword: "666333",
   categories: [
     {
       id: 'c1',
       title: '日常办公',
       iconName: 'Coffee',
       items: [
-        { id: 'l1', title: 'Gmail', url: 'https://mail.google.com', icon: 'https://www.google.com/s2/favicons?domain=mail.google.com&sz=64' },
-        { id: 'l2', title: 'Bilibili', url: 'https://www.bilibili.com', icon: 'https://www.google.com/s2/favicons?domain=bilibili.com&sz=64' },
+        { id: 'l1', title: 'Gmail', url: 'https://mail.google.com', icon: 'https://favicon.yandex.net/favicon/mail.google.com' },
+        { id: 'l2', title: 'Bilibili', url: 'https://www.bilibili.com', icon: 'https://favicon.yandex.net/favicon/www.bilibili.com' },
       ]
     }
   ]
@@ -58,7 +60,6 @@ app.get('/api/data', async (req, res) => {
       await fs.access(DATA_FILE);
       dataStr = await fs.readFile(DATA_FILE, 'utf-8');
     } catch {
-      // File doesn't exist, create it
       console.log("Data file not found, creating new one.");
       dataStr = JSON.stringify(INITIAL_DATA, null, 2);
       await fs.writeFile(DATA_FILE, dataStr);
@@ -72,7 +73,6 @@ app.get('/api/data', async (req, res) => {
         parsedData = INITIAL_DATA;
     }
 
-    // Ensure valid structure
     if (!parsedData || !parsedData.categories) {
         parsedData = INITIAL_DATA;
         await fs.writeFile(DATA_FILE, JSON.stringify(INITIAL_DATA, null, 2));
@@ -89,16 +89,32 @@ app.get('/api/data', async (req, res) => {
 app.post('/api/data', async (req, res) => {
   try {
     const newData = req.body;
-    const password = req.headers['x-admin-password'];
+    const providedPassword = req.headers['x-admin-password'];
     
-    if (password !== '666333') {
-        return res.status(403).json({ error: 'Unauthorized' });
+    // 1. Read existing data to get the *current* password
+    let currentDataStr;
+    try {
+        currentDataStr = await fs.readFile(DATA_FILE, 'utf-8');
+    } catch(e) {
+        // Fallback if file missing (edge case)
+        currentDataStr = JSON.stringify(INITIAL_DATA);
+    }
+    
+    const currentData = JSON.parse(currentDataStr);
+    // Use password from file, or fallback to default if missing in file
+    const storedPassword = currentData.adminPassword || "666333";
+
+    // 2. Verify Password
+    if (providedPassword !== storedPassword) {
+        return res.status(403).json({ error: 'Unauthorized: Incorrect password' });
     }
 
+    // 3. Validate New Data
     if (!newData || !newData.categories) {
-      return res.status(400).json({ error: 'Invalid data' });
+      return res.status(400).json({ error: 'Invalid data structure' });
     }
 
+    // 4. Write New Data (which might contain a NEW password)
     await fs.writeFile(DATA_FILE, JSON.stringify(newData, null, 2));
     res.json({ success: true });
   } catch (error) {

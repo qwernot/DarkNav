@@ -1,3 +1,4 @@
+
 import { AppData, Category } from './types';
 import { 
   LayoutGrid, Code, Palette, BookOpen, Coffee, 
@@ -7,6 +8,7 @@ import {
 } from 'lucide-react';
 
 export const INITIAL_DATA: AppData = {
+  adminPassword: "666333", // Default password
   categories: [
     {
       id: 'c1',
