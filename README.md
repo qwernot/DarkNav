@@ -1,3 +1,5 @@
+<img width="1919" height="986" alt="image" src="https://github.com/user-attachments/assets/559901dc-6322-4c73-874d-db9e74868551" />
+
 # Dark's Nav - Docker 部署教程
 
 这是一个基于 React + Node.js 的极简导航页，支持 Docker 一键部署。数据保存在本地 `data.json` 文件中，支持持久化存储。
