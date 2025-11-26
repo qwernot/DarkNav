@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  darks-nav:
+    build: .
+    container_name: darks-nav
+    ports:
+      - "3000:3000"
+    volumes:
+      # Map host data.json to container data.json for persistence
+      - ./data.json:/app/data.json
+    restart: always
