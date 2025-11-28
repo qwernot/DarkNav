@@ -5,6 +5,7 @@ import bodyParser from 'body-parser';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import bcrypt from 'bcryptjs';
 
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
@@ -14,9 +15,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'data.json');
 
-// Initial Data Fallback (must match constants.tsx structure)
+// Initial Data Fallback
+// Default password "666333" hashed
+const DEFAULT_HASH = bcrypt.hashSync("666333", 8);
+
 const INITIAL_DATA = {
-  adminPassword: "666333",
+  adminPassword: DEFAULT_HASH,
   categories: [
     {
       id: 'c1',
@@ -31,13 +35,25 @@ const INITIAL_DATA = {
 };
 
 app.use(cors());
-app.use(bodyParser.json());
+// Increase limit for large HTML bookmark imports
+app.use(bodyParser.json({ limit: '10mb' }));
 
 // Request Logging Middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
 });
+
+// Helper to get current password
+async function getCurrentPassword() {
+    try {
+        const dataStr = await fs.readFile(DATA_FILE, 'utf-8');
+        const data = JSON.parse(dataStr);
+        return data.adminPassword || DEFAULT_HASH;
+    } catch {
+        return DEFAULT_HASH;
+    }
+}
 
 // API: Proxy IP Request
 app.get('/api/ip', async (req, res) => {
@@ -78,6 +94,7 @@ app.get('/api/data', async (req, res) => {
         await fs.writeFile(DATA_FILE, JSON.stringify(INITIAL_DATA, null, 2));
     }
 
+    // Send data including password hash so client can verify locally
     res.json(parsedData);
   } catch (error) {
     console.error('Read error:', error);
@@ -91,31 +108,45 @@ app.post('/api/data', async (req, res) => {
     const newData = req.body;
     const providedPassword = req.headers['x-admin-password'];
     
-    // 1. Read existing data to get the *current* password
-    let currentDataStr;
-    try {
-        currentDataStr = await fs.readFile(DATA_FILE, 'utf-8');
-    } catch(e) {
-        // Fallback if file missing (edge case)
-        currentDataStr = JSON.stringify(INITIAL_DATA);
-    }
+    // 1. Verify Permission
+    const storedPassword = await getCurrentPassword();
+    let isAuthenticated = false;
     
-    const currentData = JSON.parse(currentDataStr);
-    // Use password from file, or fallback to default if missing in file
-    const storedPassword = currentData.adminPassword || "666333";
-
-    // 2. Verify Password
-    if (providedPassword !== storedPassword) {
-        return res.status(403).json({ error: 'Unauthorized: Incorrect password' });
+    if (storedPassword.startsWith('$2a$') || storedPassword.startsWith('$2b$')) {
+        isAuthenticated = bcrypt.compareSync(providedPassword, storedPassword);
+    } else {
+        isAuthenticated = providedPassword === storedPassword;
     }
 
-    // 3. Validate New Data
+    if (!isAuthenticated) {
+        return res.status(403).json({ error: 'Unauthorized: Password incorrect' });
+    }
+
+    // 2. Validate New Data
     if (!newData || !newData.categories) {
       return res.status(400).json({ error: 'Invalid data structure' });
     }
 
-    // 4. Write New Data (which might contain a NEW password)
-    await fs.writeFile(DATA_FILE, JSON.stringify(newData, null, 2));
+    // 3. Handle Password Change
+    let passwordToSave = storedPassword;
+    
+    if (newData.adminPassword) {
+        // Only re-hash if it looks like a new plain text password (not starting with bcrypt prefix)
+        if (!newData.adminPassword.startsWith('$2a$') && !newData.adminPassword.startsWith('$2b$')) {
+             passwordToSave = bcrypt.hashSync(newData.adminPassword, 8);
+        } else {
+             // If client sent the existing hash back, keep it
+             passwordToSave = newData.adminPassword;
+        }
+    } 
+    
+    const dataToWrite = {
+        ...newData,
+        adminPassword: passwordToSave
+    };
+
+    // 4. Write Data
+    await fs.writeFile(DATA_FILE, JSON.stringify(dataToWrite, null, 2));
     res.json({ success: true });
   } catch (error) {
     console.error('Write error:', error);
@@ -126,7 +157,6 @@ app.post('/api/data', async (req, res) => {
 // Serve Static Files
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Fallback for React Router
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });

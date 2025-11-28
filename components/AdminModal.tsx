@@ -1,12 +1,13 @@
 
 import React, { useState } from 'react';
 import { X, Lock } from 'lucide-react';
+import bcrypt from 'bcryptjs';
 
 interface AdminModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: (password: string) => void; // Pass back the password to verify
-  currentRealPassword?: string; // To verify against
+  onLogin: (password: string) => void;
+  currentRealPassword?: string; 
 }
 
 const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose, onLogin, currentRealPassword }) => {
@@ -17,15 +18,32 @@ const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose, onLogin, curre
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError(false);
+
+    // Default to "666333" if no password is set in data
     const targetPwd = currentRealPassword || "666333";
-    
-    if (password === targetPwd) {
-      onLogin(password);
-      onClose();
-      setPassword('');
-      setError(false);
-    } else {
-      setError(true);
+    let isValid = false;
+
+    try {
+        // Check if target is a bcrypt hash (starts with $2a$ or $2b$)
+        if (targetPwd.startsWith('$2a$') || targetPwd.startsWith('$2b$')) {
+            // Verify hash locally
+            isValid = bcrypt.compareSync(password, targetPwd);
+        } else {
+            // Fallback for legacy plain text passwords
+            isValid = password === targetPwd;
+        }
+
+        if (isValid) {
+            onLogin(password);
+            onClose();
+            setPassword('');
+        } else {
+            setError(true);
+        }
+    } catch (err) {
+        console.error("Login error", err);
+        setError(true);
     }
   };
 
@@ -59,7 +77,7 @@ const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose, onLogin, curre
           </div>
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition-colors shadow-lg shadow-blue-500/30"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition-colors shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2"
           >
             登录
           </button>
