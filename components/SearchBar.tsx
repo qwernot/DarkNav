@@ -30,14 +30,14 @@ const SearchBar: React.FC<SearchBarProps> = ({ engine, onEngineChange, query, on
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto my-8 relative z-20">
+    <div className="w-full max-w-3xl mx-auto my-8 relative z-20 overflow-hidden">
       <form onSubmit={handleSubmit} className="relative flex items-center w-full bg-white dark:bg-slate-800 rounded-2xl shadow-sm dark:shadow-none border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all">
         {/* Engine Selector */}
         <div className="relative border-r border-slate-100 dark:border-slate-700">
           <button
             type="button"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-2 px-4 py-4 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white outline-none transition-colors min-w-[110px]"
+            className="flex items-center gap-2 px-4 py-4 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white outline-none transition-colors min-w-[100px] sm:min-w-[110px]"
           >
             <CurrentIcon className="w-4 h-4 text-blue-500" />
             {currentEngine.name}

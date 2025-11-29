@@ -357,7 +357,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className={`flex h-screen overflow-hidden font-sans transition-colors duration-300 ${darkMode ? 'dark' : ''}`}>
+    <div className={`flex h-screen overflow-hidden font-sans transition-colors duration-300 ${darkMode ? 'dark' : ''}`} style={{width: '100vw'}}>
       <input type="file" ref={fileInputRef} onChange={handleImportData} className="hidden" accept=".json,.html" />
 
       {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-opacity" onClick={() => setSidebarOpen(false)} />}
@@ -419,7 +419,7 @@ const App: React.FC = () => {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col h-screen min-w-0 bg-[#f8fafc] dark:bg-[#0b1120]">
+      <div className="flex-1 flex flex-col h-screen min-w-0 bg-[#f8fafc] dark:bg-[#0b1120] overflow-x-hidden">
         <header className="lg:hidden h-16 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between px-4 shrink-0 z-30 transition-colors duration-300">
             <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 transition-colors"><Menu className="w-6 h-6" /></button>
             <h1 className="font-bold text-lg leading-tight text-slate-900 dark:text-white">Dark's Nav</h1>
@@ -489,6 +489,11 @@ const App: React.FC = () => {
                 </section>
               );
             })}
+          </div>
+          
+          {/* 版权信息 */}
+          <div className="py-4 mt-10 text-center text-sm text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800">
+            © 2025 Dark's Nav
           </div>
         </main>
       </div>
