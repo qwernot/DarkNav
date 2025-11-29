@@ -16,14 +16,29 @@ import EditModal from './components/EditModal';
 import CategoryModal from './components/CategoryModal';
 import ChangePasswordModal from './components/ChangePasswordModal';
 
-const useStickyState = <T,>(defaultValue: T, key: string): [T, React.Dispatch<React.SetStateAction<T>>] => {
+const useStickyState = <T,>(defaultValue: T, key: string, oldKey?: string): [T, React.Dispatch<React.SetStateAction<T>>] => {
   const [value, setValue] = useState<T>(() => {
+    // 首先尝试从新键名获取值
     const stickyValue = window.localStorage.getItem(key);
-    return stickyValue !== null ? JSON.parse(stickyValue) : defaultValue;
+    if (stickyValue !== null) {
+      return JSON.parse(stickyValue);
+    }
+    
+    // 如果新键名没有值且提供了旧键名，则尝试从旧键名获取
+    if (oldKey) {
+      const oldStickyValue = window.localStorage.getItem(oldKey);
+      if (oldStickyValue !== null) {
+        return JSON.parse(oldStickyValue);
+      }
+    }
+    
+    return defaultValue;
   });
+  
   useEffect(() => {
     window.localStorage.setItem(key, JSON.stringify(value));
   }, [key, value]);
+  
   return [value, setValue];
 };
 
@@ -86,7 +101,7 @@ const App: React.FC = () => {
   const [data, setData] = useState<AppData>(INITIAL_DATA);
   const [dataLoading, setDataLoading] = useState(true);
   
-  const [darkMode, setDarkMode] = useStickyState(false, 'flatnav-theme');
+  const [darkMode, setDarkMode] = useStickyState(false, 'darknav-theme', 'flatnav-theme');
   const [activeCategory, setActiveCategory] = useState<string>('');
   
   const [isAdmin, setIsAdmin] = useState(false);
@@ -99,7 +114,7 @@ const App: React.FC = () => {
   const [weatherLoading, setWeatherLoading] = useState(true);
   
   // Search State - Default to 'local'
-  const [searchEngine, setSearchEngine] = useState<string>('local');
+  const [searchEngine, setSearchEngine] = useStickyState<SearchEngine>('local', 'darknav-search-engine', 'flatnav-search-engine');
   const [searchQuery, setSearchQuery] = useState('');
 
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -219,13 +234,19 @@ const App: React.FC = () => {
 
   // Search Logic
   const handleSearch = () => {
-      if (searchEngine === 'local') return; // Local is real-time
-      const engines: Record<string, string> = {
+      // 本地搜索是实时的，不需要额外操作
+      if (searchEngine === 'local') return;
+      
+      // 确保搜索引擎URL映射正确
+      const engines: Record<SearchEngine, string> = {
         google: 'https://www.google.com/search?q=',
         bing: 'https://www.bing.com/search?q=',
         baidu: 'https://www.baidu.com/s?wd=',
+        local: '' // 本地搜索不需要URL
       };
-      if (searchQuery.trim()) {
+      
+      // 确保有搜索关键词并且引擎URL有效
+      if (searchQuery.trim() && engines[searchEngine]) {
           window.location.href = `${engines[searchEngine]}${encodeURIComponent(searchQuery)}`;
       }
   };
@@ -350,18 +371,19 @@ const App: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `flatnav-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.download = `darknav-backup-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   return (
-    <div className={`flex h-screen overflow-hidden font-sans transition-colors duration-300 ${darkMode ? 'dark' : ''}`} style={{width: '100vw'}}>
+    <div className={`flex h-screen w-full overflow-hidden font-sans transition-colors duration-300 ${darkMode ? 'dark' : ''}`}>
+
       <input type="file" ref={fileInputRef} onChange={handleImportData} className="hidden" accept=".json,.html" />
 
       {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-opacity" onClick={() => setSidebarOpen(false)} />}
-
+      
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 flex flex-col justify-between shrink-0 transition-all duration-300 transform ${sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0 lg:shadow-none'}`}>
         <div className="flex flex-col h-full overflow-hidden">
           <div className="p-6 mb-2 shrink-0 flex items-center justify-between">

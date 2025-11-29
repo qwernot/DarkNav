@@ -32,25 +32,41 @@
       }
     </script>
     <style>
+      /* 隐藏滚动条 */
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       
-      /* 防止移动端左右晃动 */
+      /* 基本重置和防止晃动 */
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
       
+      /* 防止整个页面溢出 */
       html, body {
         overflow-x: hidden;
         width: 100%;
-        height: 100%;
+        max-width: 100vw;
+        -webkit-text-size-adjust: 100%;
         position: relative;
       }
       
-      body {
-        -webkit-overflow-scrolling: touch;
+      /* 防止元素溢出视口 */
+      * {
+        max-width: 100%;
+      }
+      
+      /* 确保媒体文件不会溢出 */
+      img, video, svg {
+        max-width: 100%;
+        height: auto;
+      }
+      
+      /* 防止容器元素溢出 */
+      body > div, .container, section, header, main, footer {
+        max-width: 100%;
+        overflow-x: hidden;
       }
     </style>
   <script type="importmap">
@@ -72,7 +88,6 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
   <body class="bg-[#f3f4f6] dark:bg-slate-900 transition-colors duration-300">
     <div id="root"></div>

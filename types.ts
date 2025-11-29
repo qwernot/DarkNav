@@ -19,4 +19,4 @@ export interface AppData {
   categories: Category[];
 }
 
-export type SearchEngine = 'google' | 'bing' | 'baidu';
+export type SearchEngine = 'google' | 'bing' | 'baidu' | 'local';

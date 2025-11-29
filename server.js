@@ -21,17 +21,7 @@ const DEFAULT_HASH = bcrypt.hashSync("666333", 8);
 
 const INITIAL_DATA = {
   adminPassword: DEFAULT_HASH,
-  categories: [
-    {
-      id: 'c1',
-      title: '日常办公',
-      iconName: 'Coffee',
-      items: [
-        { id: 'l1', title: 'Gmail', url: 'https://mail.google.com', icon: 'https://favicon.yandex.net/favicon/mail.google.com' },
-        { id: 'l2', title: 'Bilibili', url: 'https://www.bilibili.com', icon: 'https://favicon.yandex.net/favicon/www.bilibili.com' },
-      ]
-    }
-  ]
+  categories: []
 };
 
 app.use(cors());
