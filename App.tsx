@@ -252,16 +252,21 @@ const App: React.FC = () => {
   };
 
   // Filter Categories for Local Search
-  const filteredCategories = data.categories.map(cat => {
-      if (searchEngine !== 'local' || !searchQuery.trim()) return cat;
+  const displayCategories = React.useMemo(() => {
+      // 如果不是本地搜索或没有搜索查询，显示所有分类
+      if (searchEngine !== 'local' || !searchQuery.trim()) {
+          return data.categories;
+      }
       
-      const filteredItems = cat.items.filter(item => 
-          item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-          item.url.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      
-      return { ...cat, items: filteredItems };
-  }).filter(cat => cat.items.length > 0); 
+      // 本地搜索时，过滤每个分类中的项目
+      return data.categories.map(cat => {
+          const filteredItems = cat.items.filter(item => 
+              item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+              item.url.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+          return { ...cat, items: filteredItems };
+      }).filter(cat => cat.items.length > 0); // 只在有搜索查询时过滤空分类
+  }, [data.categories, searchEngine, searchQuery]);
 
   const scrollToCategory = (id: string) => {
     setActiveCategory(id);
@@ -293,16 +298,21 @@ const App: React.FC = () => {
     });
     saveDataToServer({ ...data, categories: newCategories });
   };
-  const handleSaveCategory = (title: string, iconName: string) => {
+  const handleSaveCategory = (category: { title: string; iconName: string }) => {
     let newCategories;
     if (editingCategory) {
-        newCategories = data.categories.map(c => c.id === editingCategory.id ? { ...c, title, iconName } : c);
+        newCategories = data.categories.map(c => c.id === editingCategory.id ? { ...c, title: category.title, iconName: category.iconName } : c);
+        // 更新现有分类时，先更新UI再保存到服务器
+        setData({ ...data, categories: newCategories });
+        saveDataToServer({ ...data, categories: newCategories });
     } else {
-        const newCategory: Category = { id: `c${Date.now()}`, title, iconName, items: [] };
+        const newCategory: Category = { id: `c${Date.now()}`, title: category.title, iconName: category.iconName, items: [] };
         newCategories = [...data.categories, newCategory];
+        // 添加新分类时，先更新UI再保存到服务器，确保立即显示新分类
+        setData({ ...data, categories: newCategories });
+        saveDataToServer({ ...data, categories: newCategories });
         setTimeout(() => scrollToCategory(newCategory.id), 100);
     }
-    saveDataToServer({ ...data, categories: newCategories });
   };
   const handleDeleteCategory = (id: string) => {
     if (window.confirm('确定要删除此分类及其所有内容吗？')) {
@@ -397,7 +407,7 @@ const App: React.FC = () => {
           <div className="px-4 flex-1 overflow-y-auto no-scrollbar">
             <div className="flex items-center justify-between mb-4 px-2"><span className="text-xs font-bold text-slate-400 dark:text-slate-500">分类导航</span><div className="h-[1px] bg-slate-100 dark:bg-slate-800 flex-1 ml-4"></div></div>
             <nav className="space-y-2 pb-4">
-              {filteredCategories.map((cat, index) => {
+              {displayCategories.map((cat, index) => {
                 const Icon = ICON_MAP[cat.iconName] || ICON_MAP['LayoutGrid'];
                 const isActive = activeCategory === cat.id;
                 return (
@@ -466,14 +476,14 @@ const App: React.FC = () => {
               />
           </div>
 
-          {filteredCategories.length === 0 && (
+          {displayCategories.length === 0 && (
               <div className="text-center py-20 text-slate-400">
                   {searchEngine === 'local' && searchQuery ? '未找到匹配的本地链接' : '暂无分类'}
               </div>
           )}
 
           <div className="space-y-10 pb-20 max-w-[1600px] mx-auto">
-            {filteredCategories.map((category) => {
+            {displayCategories.map((category) => {
               const Icon = ICON_MAP[category.iconName] || ICON_MAP['LayoutGrid'];
               return (
                 <section key={category.id} id={category.id} className="scroll-mt-20 lg:scroll-mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -522,7 +532,7 @@ const App: React.FC = () => {
 
       <AdminModal isOpen={showAdminModal} onClose={() => setShowAdminModal(false)} onLogin={handleLogin} currentRealPassword={data.adminPassword} />
       <EditModal isOpen={editModalOpen} onClose={() => setEditModalOpen(false)} initialData={editingItem} categoryId={editingCategoryId} onSave={handleSaveLink} onDelete={handleDeleteLink} />
-      <CategoryModal isOpen={categoryModalOpen} onClose={() => setCategoryModalOpen(false)} onSave={handleSaveCategory} initialData={editingCategory} />
+      <CategoryModal isOpen={categoryModalOpen} onClose={() => { setCategoryModalOpen(false); setEditingCategory(null); }} onSave={handleSaveCategory} initialData={editingCategory} />
       <ChangePasswordModal isOpen={showChangePwdModal} onClose={() => setShowChangePwdModal(false)} onSave={handleChangePassword} />
     </div>
   );

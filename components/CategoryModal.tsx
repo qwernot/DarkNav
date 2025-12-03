@@ -7,7 +7,7 @@ import { Category } from '../types';
 interface CategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (title: string, iconName: string) => void;
+  onSave: (category: { title: string; iconName: string }) => void;
   initialData?: Category | null;
 }
 
@@ -32,7 +32,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({ isOpen, onClose, onSave, 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (title.trim()) {
-      onSave(title, selectedIcon);
+      onSave({ title, iconName: selectedIcon });
       onClose();
     }
   };
